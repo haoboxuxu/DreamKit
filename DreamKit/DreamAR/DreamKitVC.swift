@@ -11,11 +11,13 @@ import ARKit
 
 class DreamKitVC: UIViewController {
 
-    //var debugImageview: UIImageView = {
-    //    let imageView = UIImageView()
-    //    imageView.frame = CGRect(x: 10, y: 10, width: 150, height: 150)
-    //    return imageView
-    //}()
+    var debugImageview: UIImageView = {
+        let imageView = UIImageView()
+        imageView.frame = CGRect(x: 10, y: 10, width: 150, height: 150)
+        return imageView
+    }()
+    
+    let snapshotQueue = DispatchQueue(label: "SceneView Snapshot Queue")
     
     private var sceneView: ARSCNView  = {
         let sceneView = ARSCNView()
@@ -34,6 +36,7 @@ class DreamKitVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setUpARView()
+        view.addSubview(debugImageview)
     }
     
     private func setUpARView() {
@@ -68,25 +71,23 @@ class DreamKitVC: UIViewController {
         sceneView.frame = self.view.bounds
         previewView.frame = self.view.bounds
     }
-    
-    var tick = 1
 }
 
 extension DreamKitVC: ARSCNViewDelegate, ARSessionDelegate {
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        
-        // if slow, try global queue
-        DispatchQueue.main.async {
-            guard self.tick >= 100 else { self.tick = self.tick + 1; return }
-            let snapshotImage = self.sceneView.snapshot()
-            guard let cgImage = snapshotImage.cgImage else {
-                return
+        snapshotQueue.async {
+            let cvPixelBuffer = frame.capturedImage
+            let image = UIImage(ciImage: CIImage(cvPixelBuffer: cvPixelBuffer))
+            
+            DispatchQueue.main.async {
+                self.debugImageview.image = image
             }
             
-            self.cameraManager.captureCGImageFromARSession(didOutput: cgImage)
+            let ciImage = CIImage(cvPixelBuffer: cvPixelBuffer)
+            
+            self.cameraManager.captureCIImageFromARSession(didOutput: ciImage)
         }
-        
     }
     
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {

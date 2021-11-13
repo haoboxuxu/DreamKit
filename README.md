@@ -4,7 +4,7 @@
 
 ### TODOS📒
 
-- [ ] bump up FPS
+- [x] bump up FPS
 - [ ] solve overheating
 - [ ] map anchor points to 3D
 - [ ] build-in some gestures
